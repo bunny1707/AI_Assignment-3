@@ -1,3 +1,4 @@
+import random
 import chess
 
 class AlphaBetaAgent:
@@ -14,44 +15,52 @@ class AlphaBetaAgent:
             chess.KING: 0
         }
         value = 0
-        for piece_type in piece_values:
-            value += len(board.pieces(piece_type, chess.WHITE)) * piece_values[piece_type]
-            value -= len(board.pieces(piece_type, chess.BLACK)) * piece_values[piece_type]
+        for piece, score in piece_values.items():
+            value += len(board.pieces(piece, chess.WHITE)) * score
+            value -= len(board.pieces(piece, chess.BLACK)) * score
         return value
 
-    def alphabeta(self, board, depth, alpha, beta, maximizing_player):
+    def alphabeta(self, board, depth, alpha, beta, maximizing):
         if depth == 0 or board.is_game_over():
             return self.evaluate(board), None
 
         legal_moves = list(board.legal_moves)
-        best_move = None
+        best_moves = []
 
-        if maximizing_player:
-            max_eval = float('-inf')
+        if maximizing:
+            value = float('-inf')
             for move in legal_moves:
                 board.push(move)
-                eval, _ = self.alphabeta(board, depth - 1, alpha, beta, False)
+                score, _ = self.alphabeta(board, depth - 1, alpha, beta, False)
                 board.pop()
-                if eval > max_eval:
-                    max_eval = eval
-                    best_move = move
-                alpha = max(alpha, eval)
+
+                if score > value:
+                    value = score
+                    best_moves = [move]
+                elif score == value:
+                    best_moves.append(move)
+
+                alpha = max(alpha, value)
                 if beta <= alpha:
                     break
-            return max_eval, best_move
+            return value, random.choice(best_moves)
         else:
-            min_eval = float('inf')
+            value = float('inf')
             for move in legal_moves:
                 board.push(move)
-                eval, _ = self.alphabeta(board, depth - 1, alpha, beta, True)
+                score, _ = self.alphabeta(board, depth - 1, alpha, beta, True)
                 board.pop()
-                if eval < min_eval:
-                    min_eval = eval
-                    best_move = move
-                beta = min(beta, eval)
+
+                if score < value:
+                    value = score
+                    best_moves = [move]
+                elif score == value:
+                    best_moves.append(move)
+
+                beta = min(beta, value)
                 if beta <= alpha:
                     break
-            return min_eval, best_move
+            return value, random.choice(best_moves)
 
     def choose_move(self, board):
         _, move = self.alphabeta(board, self.depth, float('-inf'), float('inf'), board.turn)

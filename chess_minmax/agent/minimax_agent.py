@@ -1,54 +1,54 @@
-import chess
-import math
 import random
+import chess 
 
 class MinimaxAgent:
     def __init__(self, depth=2):
         self.depth = depth
 
-    def evaluate_board(self, board):
-        # Simple evaluation: material count
-        values = {
-            chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3,
-            chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0
+    def evaluate(self, board):
+        # Use improved evaluation (e.g., material balance)
+        piece_values = {
+            chess.PAWN: 1,
+            chess.KNIGHT: 3,
+            chess.BISHOP: 3,
+            chess.ROOK: 5,
+            chess.QUEEN: 9,
+            chess.KING: 0
         }
-        score = 0
-        for piece_type in values:
-            score += len(board.pieces(piece_type, chess.WHITE)) * values[piece_type]
-            score -= len(board.pieces(piece_type, chess.BLACK)) * values[piece_type]
-        return score
+        value = 0
+        for piece, score in piece_values.items():
+            value += len(board.pieces(piece, chess.WHITE)) * score
+            value -= len(board.pieces(piece, chess.BLACK)) * score
+        return value
 
-    def minimax(self, board, depth, maximizing_player):
-        if board.is_game_over() or depth == 0:
-            return self.evaluate_board(board), None
+    def minimax(self, board, depth, maximizing):
+        if depth == 0 or board.is_game_over():
+            return self.evaluate(board), None
 
         legal_moves = list(board.legal_moves)
-        if not legal_moves:
-            return self.evaluate_board(board), None
+        best_value = float('-inf') if maximizing else float('inf')
+        best_moves = []
 
-        best_move = None
+        for move in legal_moves:
+            board.push(move)
+            value, _ = self.minimax(board, depth - 1, not maximizing)
+            board.pop()
 
-        if maximizing_player:
-            max_eval = -math.inf
-            for move in legal_moves:
-                board.push(move)
-                eval, _ = self.minimax(board, depth - 1, False)
-                board.pop()
-                if eval > max_eval:
-                    max_eval = eval
-                    best_move = move
-            return max_eval, best_move
-        else:
-            min_eval = math.inf
-            for move in legal_moves:
-                board.push(move)
-                eval, _ = self.minimax(board, depth - 1, True)
-                board.pop()
-                if eval < min_eval:
-                    min_eval = eval
-                    best_move = move
-            return min_eval, best_move
+            if maximizing:
+                if value > best_value:
+                    best_value = value
+                    best_moves = [move]
+                elif value == best_value:
+                    best_moves.append(move)
+            else:
+                if value < best_value:
+                    best_value = value
+                    best_moves = [move]
+                elif value == best_value:
+                    best_moves.append(move)
+
+        return best_value, random.choice(best_moves)
 
     def choose_move(self, board):
-        _, move = self.minimax(board, self.depth, board.turn == chess.WHITE)
-        return move if move else random.choice(list(board.legal_moves))
+        _, move = self.minimax(board, self.depth, board.turn)
+        return move
